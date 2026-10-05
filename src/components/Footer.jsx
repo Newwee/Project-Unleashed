@@ -85,9 +85,15 @@ export default function Footer() {
         {/* Bottom row */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-gray-500">
           <p>© 2026 {data.studio.name}. All rights reserved.</p>
-          <p className="flex items-center gap-1">
-            React & Supabase • Built for Roblox Creators
-          </p>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-gray-400">
+              Made by <span className="text-sky-300 font-bold hover:text-cyan-300 transition-colors">New JA</span>
+            </span>
+            <span className="text-gray-600">•</span>
+            <span>React & Supabase</span>
+            <span className="text-gray-600">•</span>
+            <span>Built for Roblox Creators</span>
+          </div>
         </div>
       </div>
     </footer>
