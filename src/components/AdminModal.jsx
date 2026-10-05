@@ -720,7 +720,7 @@ CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authentic
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div>
                       <label className="block text-xs font-mono text-gray-300 mb-1">
                         ชื่อเกม (Title)
@@ -729,7 +729,7 @@ CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authentic
                         type="text"
                         value={game.title}
                         onChange={(e) => handleGameChange(index, 'title', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
                       />
                     </div>
                     <div>
@@ -741,10 +741,22 @@ CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authentic
                         onChange={(e) => handleGameChange(index, 'status', e.target.value)}
                         className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
                       >
-                        <option value="IN DEVELOPMENT">IN DEVELOPMENT (กำลังพัฒนา - ปุ่มสีเทากดไม่ได้)</option>
-                        <option value="PLANNING">PLANNING (อยู่ในช่วงวางแผน - ปุ่มสีเทากดไม่ได้)</option>
-                        <option value="RELEASED">RELEASED (เปิดให้เล่นแล้ว - ปุ่มสีฟ้า กดเพื่อไปเล่น)</option>
+                        <option value="IN DEVELOPMENT">IN DEVELOPMENT (กำลังพัฒนา)</option>
+                        <option value="PLANNING">PLANNING (วางแผน)</option>
+                        <option value="RELEASED">RELEASED (เปิดให้เล่นแล้ว)</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-gray-300 mb-1">
+                        ข้อความป้ายสถานะ (Status Tag)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="IN DEVELOPMENT & PLANNING"
+                        value={game.statusTag || ''}
+                        onChange={(e) => handleGameChange(index, 'statusTag', e.target.value)}
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-mono text-gray-300 mb-1">
@@ -754,7 +766,7 @@ CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authentic
                         type="text"
                         value={game.genre}
                         onChange={(e) => handleGameChange(index, 'genre', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
                       />
                     </div>
                   </div>
@@ -769,6 +781,93 @@ CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authentic
                       onChange={(e) => handleGameChange(index, 'description', e.target.value)}
                       className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
                     />
+                  </div>
+
+                  {/* Game Tags Manager (#Anime #PvP #VFX) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-mono text-gray-300">
+                        แท็กเกม (Game Tags เช่น #Anime, #Combat Arena, #PvP, #VFX)
+                      </label>
+                      <span className="text-[10px] font-mono text-cyan-400">
+                        แสดงใต้คำอธิบายเกมบนหน้าเว็บ
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-[#070d1a] border border-sky-500/20 space-y-2.5">
+                      {/* Active Tag Badges */}
+                      <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
+                        {(Array.isArray(game.tags) ? game.tags : []).map((tag, tagIdx) => (
+                          <span
+                            key={tagIdx}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-sky-950/70 border border-sky-500/40 text-sky-200 text-xs font-mono shadow-sm"
+                          >
+                            <span>#{tag}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedTags = (game.tags || []).filter((_, i) => i !== tagIdx);
+                                handleGameChange(index, 'tags', updatedTags);
+                              }}
+                              className="text-gray-400 hover:text-red-400 transition-colors p-0.5"
+                              title="ลบแท็กนี้"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+
+                        {(!game.tags || game.tags.length === 0) && (
+                          <span className="text-xs font-mono text-gray-500 italic">
+                            ยังไม่มีแท็ก (พิมพ์ด้านล่างเพื่อเพิ่ม)
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Tag Input Box */}
+                      <div className="flex items-center gap-2 pt-1 border-t border-sky-500/10">
+                        <input
+                          type="text"
+                          id={`tag-input-${index}`}
+                          placeholder="พิมพ์ชื่อแท็กใหม่ เช่น Anime, PvP, Combat Arena แล้วกด Enter..."
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ',') {
+                              e.preventDefault();
+                              const val = e.currentTarget.value.trim().replace(/^#/, '');
+                              if (val) {
+                                const currentTags = Array.isArray(game.tags) ? game.tags : [];
+                                if (!currentTags.includes(val)) {
+                                  handleGameChange(index, 'tags', [...currentTags, val]);
+                                }
+                                e.currentTarget.value = '';
+                              }
+                            }
+                          }}
+                          className="flex-1 bg-[#0b1428] border border-sky-500/20 rounded-lg px-3 py-1.5 text-white text-xs font-mono focus:border-sky-400 outline-none placeholder:text-gray-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const inputEl = document.getElementById(`tag-input-${index}`);
+                            if (inputEl && inputEl.value.trim()) {
+                              const val = inputEl.value.trim().replace(/^#/, '');
+                              const currentTags = Array.isArray(game.tags) ? game.tags : [];
+                              if (!currentTags.includes(val)) {
+                                handleGameChange(index, 'tags', [...currentTags, val]);
+                              }
+                              inputEl.value = '';
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-sky-600/30 hover:bg-sky-600/60 border border-sky-500/40 text-sky-200 text-xs font-mono flex items-center gap-1 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>เพิ่มแท็ก</span>
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[11px] font-mono text-gray-500 mt-1">
+                      💡 วิธีใช้งาน: พิมพ์ชื่อแท็กแล้วกด <strong>Enter</strong> หรือกดปุ่ม <strong>"เพิ่มแท็ก"</strong> (สามารถกดกากบาท ✕ เพื่อลบแท็กได้)
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
