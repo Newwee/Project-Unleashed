@@ -2,12 +2,12 @@ import React, { useEffect, useRef } from 'react';
 
 /**
  * ParticlesBackground inspired by reactbits.dev
- * Smooth anime/cyberpunk ember particles floating in the dark
+ * Smooth anime/cyberpunk blue & cyan particles floating in the dark
  */
 export default function ParticlesBackground({
   particleCount = 45,
-  particleColors = ['#e85d9e', '#a855f7', '#60a5fa', '#f472b6'],
-  speed = 0.6,
+  particleColors = ['#38bdf8', '#0284c7', '#00f2fe', '#60a5fa', '#93c5fd'],
+  speed = 0.5,
   className = '',
 }) {
   const canvasRef = useRef(null);

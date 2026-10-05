@@ -12,20 +12,20 @@ import NotificationToast from './components/NotificationToast';
 export default function App() {
   return (
     <StudioProvider>
-      <div className="relative min-h-screen bg-[#0b0711] text-[#f3e8ff] overflow-x-hidden selection:bg-pink-500 selection:text-white">
+      <div className="relative min-h-screen bg-[#070c18] text-[#f0f9ff] overflow-x-hidden selection:bg-sky-500 selection:text-white">
         
-        {/* React Bits Ambient Particles Background */}
+        {/* React Bits Ambient Particles Background (Electric Blue & Cyan) */}
         <ParticlesBackground
-          particleCount={40}
-          particleColors={['#e85d9e', '#a855f7', '#60a5fa', '#f472b6']}
+          particleCount={45}
+          particleColors={['#38bdf8', '#0284c7', '#00f2fe', '#60a5fa', '#93c5fd']}
           speed={0.4}
         />
 
         {/* Ambient Subtle Cyber Grid Texture */}
-        <div className="pointer-events-none fixed inset-0 z-0 bg-grid-pattern opacity-40" />
+        <div className="pointer-events-none fixed inset-0 z-0 bg-grid-pattern opacity-45" />
 
         {/* Top Glow bar */}
-        <div className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-pink-500 to-transparent z-50 opacity-70" />
+        <div className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-sky-400 to-transparent z-50 opacity-75" />
 
         {/* Main Layout */}
         <div className="relative z-10 flex flex-col min-h-screen">

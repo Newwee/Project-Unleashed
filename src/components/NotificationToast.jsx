@@ -17,15 +17,15 @@ export default function NotificationToast() {
             ? 'bg-red-950/90 border-red-500/50 text-red-200'
             : type === 'info'
             ? 'bg-blue-950/90 border-blue-500/50 text-blue-200'
-            : 'bg-[#1b0d26]/95 border-pink-500/50 text-pink-200'
+            : 'bg-[#0c162d]/95 border-sky-500/50 text-sky-200'
         }`}
       >
         {type === 'error' ? (
           <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
         ) : type === 'info' ? (
-          <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />
+          <Info className="w-4 h-4 text-cyan-400 flex-shrink-0" />
         ) : (
-          <CheckCircle className="w-4 h-4 text-pink-400 flex-shrink-0" />
+          <CheckCircle className="w-4 h-4 text-sky-400 flex-shrink-0" />
         )}
         <span className="text-xs font-mono font-medium">{message}</span>
       </div>

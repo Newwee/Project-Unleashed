@@ -9,16 +9,16 @@ export default {
     extend: {
       colors: {
         brand: {
-          bg: '#0c0712',
-          surface: '#150d1e',
-          'surface-hover': '#1e132c',
-          border: 'rgba(255, 100, 200, 0.15)',
-          primary: '#e85d9e',
-          secondary: '#a855f7',
-          accent: '#c084fc',
-          cyan: '#38bdf8',
-          text: '#f3e8ff',
-          muted: '#9ca3af',
+          bg: '#070c18',
+          surface: '#0c162d',
+          'surface-hover': '#112246',
+          border: 'rgba(56, 189, 248, 0.2)',
+          primary: '#38bdf8',
+          secondary: '#0284c7',
+          accent: '#60a5fa',
+          cyan: '#00f2fe',
+          text: '#f0f9ff',
+          muted: '#94a3b8',
         }
       },
       fontFamily: {
@@ -37,8 +37,8 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         glow: {
-          '0%': { filter: 'drop-shadow(0 0 15px rgba(232, 93, 158, 0.4))' },
-          '100%': { filter: 'drop-shadow(0 0 35px rgba(168, 85, 247, 0.7))' },
+          '0%': { filter: 'drop-shadow(0 0 15px rgba(56, 189, 248, 0.4))' },
+          '100%': { filter: 'drop-shadow(0 0 35px rgba(14, 165, 233, 0.7))' },
         }
       }
     },
