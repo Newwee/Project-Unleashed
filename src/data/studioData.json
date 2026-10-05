@@ -1,0 +1,73 @@
+{
+  "studio": {
+    "name": "Project Unleash",
+    "badge": "ROBLOX GAME STUDIO",
+    "tagline": "Unleash Your Power. Elevating Roblox Anime Gaming.",
+    "description": "Small crew, sharp mechanics. We build fast-paced Roblox worlds, explosive anime combat systems, and ship what we love to play ourselves.",
+    "robloxGroupUrl": "https://www.roblox.com/communities/400152586/Anime-Unleashed#!/about",
+    "logoUrl": "/LogoMap.png",
+    "discordUrl": "https://discord.gg/",
+    "announcement": "🔥 Project Unleashed is currently in heavy development! Join our Roblox group for exclusive sneak peeks and playtest invites."
+  },
+  "stats": [
+    { "label": "Active Projects", "value": "1" },
+    { "label": "Core Developers", "value": "4" },
+    { "label": "Status", "value": "IN DEVELOPMENT" }
+  ],
+  "games": [
+    {
+      "id": "project-unleashed",
+      "title": "Project Unleashed",
+      "status": "IN DEVELOPMENT",
+      "statusTag": "IN DEVELOPMENT & PLANNING",
+      "genre": "Anime Combat / Action RPG",
+      "coverUrl": "/LogoMap.png",
+      "description": "A high-octane, parry-driven anime combat experience built from the ground up on Roblox. Featuring fluid movement, dynamic abilities, custom VFX, and an escalating battle arena.",
+      "tags": ["Anime", "Combat Arena", "PvP", "VFX"],
+      "playUrl": "https://www.roblox.com/communities/400152586/Anime-Unleashed#!/about",
+      "isFeatured": true
+    }
+  ],
+  "team": [
+    {
+      "id": "norlive",
+      "name": "norlive",
+      "handle": "@norlive",
+      "role": "OWNER",
+      "category": "OWNER",
+      "avatarUrl": "/TamaVFX.jpg",
+      "robloxUrl": "https://www.roblox.com/users/483055395/profile",
+      "bio": "Studio Director & VFX Visionary. Leading game concepts and directing the future of Project Unleash."
+    },
+    {
+      "id": "dark-night-new",
+      "name": "NEWJAA",
+      "handle": "@Dark_NightNew",
+      "role": "DEVELOPER",
+      "category": "DEVELOPERS",
+      "avatarUrl": "/duck.gif",
+      "robloxUrl": "https://www.roblox.com/users/1404764448/profile",
+      "bio": "Lead Gameplay & Mechanics Programmer. Architect of fluid combat logic and core systems."
+    },
+    {
+      "id": "real-aerxz",
+      "name": "Alex",
+      "handle": "@RealAerxz_OV",
+      "role": "DEVELOPER",
+      "category": "DEVELOPERS",
+      "avatarUrl": "/AlexProfile.png",
+      "robloxUrl": "https://www.roblox.com/users/1525362881/profile",
+      "bio": "Systems Engineer & Gameplay Developer. Fine-tuning server stability and combat physics."
+    },
+    {
+      "id": "dorzzy",
+      "name": "Dorzzy",
+      "handle": "@dorzzy_xlive2",
+      "role": "MODELER",
+      "category": "MODELERS",
+      "avatarUrl": "/DorzzyProfile.png",
+      "robloxUrl": "https://www.roblox.com/users/11540104928/profile",
+      "bio": "3D Environment & Asset Modeler. Crafting the visual atmosphere and weapon designs."
+    }
+  ]
+}
