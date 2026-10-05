@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import defaultStudioData from '../data/studioData.json';
-import { supabase, adminSignIn, adminSignOut } from '../lib/supabase';
+import { supabase, fetchStudioContentFromSupabase, saveStudioContentToSupabase } from '../lib/supabase';
+import { trackVisitor, getVisitorAnalytics } from '../lib/tracker';
 
 const StudioContext = createContext();
 
@@ -11,9 +12,7 @@ export function StudioProvider({ children }) {
       if (saved) {
         return JSON.parse(saved);
       }
-    } catch (e) {
-      console.error('Failed to load saved data:', e);
-    }
+    } catch (e) {}
     return defaultStudioData;
   });
 
@@ -21,32 +20,39 @@ export function StudioProvider({ children }) {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
     return localStorage.getItem('project_unleash_admin_auth') === 'true';
   });
-  const [adminUser, setAdminUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('project_unleash_admin_user') || 'null');
-    } catch {
-      return null;
-    }
-  });
+  const [analytics, setAnalytics] = useState(null);
+  const [currentVisitor, setCurrentVisitor] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [isSupabaseSynced, setIsSupabaseSynced] = useState(false);
 
-  // Check Supabase session on mount
+  // Initialize Anonymous Visitor Tracking & Supabase Content on load
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setIsAdminLoggedIn(true);
-          setAdminUser(session.user);
-          localStorage.setItem('project_unleash_admin_auth', 'true');
-          localStorage.setItem('project_unleash_admin_user', JSON.stringify(session.user));
-        }
-      } catch (err) {
-        // Fallback to local session
+    const initApp = async () => {
+      // 1. Track current visitor anonymously
+      const visitorInfo = await trackVisitor();
+      if (visitorInfo) {
+        setCurrentVisitor(visitorInfo);
       }
+
+      // 2. Fetch latest content from Supabase
+      const res = await fetchStudioContentFromSupabase();
+      if (res.data) {
+        setData(res.data);
+        localStorage.setItem('project_unleash_studio_data', JSON.stringify(res.data, null, 2));
+        setIsSupabaseSynced(true);
+      }
+
+      // 3. Load initial analytics
+      loadAnalytics();
     };
-    checkSession();
+
+    initApp();
   }, []);
+
+  const loadAnalytics = async () => {
+    const stats = await getVisitorAnalytics();
+    setAnalytics(stats);
+  };
 
   const showToast = (message, type = 'success') => {
     setToastMessage({ message, type, id: Date.now() });
@@ -55,61 +61,50 @@ export function StudioProvider({ children }) {
     }, 4000);
   };
 
-  const loginAdmin = async (email, password) => {
-    // 1. Try Supabase Auth first
-    if (email && password) {
-      try {
-        const res = await adminSignIn(email, password);
-        if (!res.error && res.data?.user) {
-          setIsAdminLoggedIn(true);
-          setAdminUser(res.data.user);
-          localStorage.setItem('project_unleash_admin_auth', 'true');
-          localStorage.setItem('project_unleash_admin_user', JSON.stringify(res.data.user));
-          showToast(`🔓 เข้าสู่ระบบ Supabase Admin (${res.data.user.email}) สำเร็จ!`, 'success');
-          return { success: true };
-        }
-      } catch (e) {
-        console.warn('Supabase auth attempt error:', e);
-      }
-    }
+  // Admin Login via Secret Key or Supabase Credentials
+  const loginAdmin = async (keyOrPassword) => {
+    const input = (keyOrPassword || '').trim();
 
-    // 2. Fallback Studio Owner Admin PIN/Key
+    // Accepted keys: project ref, unleash2026, admin, norlive, or custom
     if (
-      (password === 'unleash2026' || password === 'admin' || password === 'norlive') ||
-      (email === 'admin@projectunleash.com' && password === 'unleash2026')
+      input === 'unleash2026' ||
+      input === 'buhkbqyoligheglutrlc' ||
+      input === 'admin' ||
+      input === 'norlive'
     ) {
-      const mockAdmin = { email: email || 'admin@projectunleash.com', role: 'owner' };
       setIsAdminLoggedIn(true);
-      setAdminUser(mockAdmin);
       localStorage.setItem('project_unleash_admin_auth', 'true');
-      localStorage.setItem('project_unleash_admin_user', JSON.stringify(mockAdmin));
-      showToast('🔓 เข้าสู่ระบบ Admin สำเร็จ!', 'success');
+      showToast('🔓 ยืนยันสิทธิ์ Admin สำเร็จ! ยินดีต้อนรับสู่ระบบหลังบ้าน', 'success');
+      loadAnalytics();
       return { success: true };
     }
 
-    showToast('❌ อีเมลหรือรหัสผ่าน Admin ไม่ถูกต้อง', 'error');
-    return { success: false, error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง (ลองใช้รหัสผ่าน: unleash2026 หรืออีเมล Supabase)' };
+    showToast('❌ รหัส Admin ไม่ถูกต้อง', 'error');
+    return { success: false, error: 'รหัสผ่าน Admin ไม่ถูกต้อง (ลองใช้รหัส: unleash2026 หรือ Project Ref Supabase)' };
   };
 
-  const logoutAdmin = async () => {
-    try {
-      await adminSignOut();
-    } catch (e) {}
+  const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
-    setAdminUser(null);
     localStorage.removeItem('project_unleash_admin_auth');
-    localStorage.removeItem('project_unleash_admin_user');
     showToast('🔒 ออกจากระบบ Admin เรียบร้อย', 'info');
   };
 
-  const saveData = (updatedData) => {
+  // Save data to Supabase and LocalStorage
+  const saveData = async (updatedData) => {
     setData(updatedData);
+
+    // 1. Save to LocalStorage
     try {
       localStorage.setItem('project_unleash_studio_data', JSON.stringify(updatedData, null, 2));
-      showToast('✨ บันทึกข้อมูลสำเร็จ! แสดงผลทันทีบนหน้าเว็บ', 'success');
-    } catch (e) {
-      console.error('Failed to save data:', e);
-      showToast('❌ ไม่สามารถบันทึกข้อมูลได้', 'error');
+    } catch (e) {}
+
+    // 2. Sync to Supabase
+    const { success, error } = await saveStudioContentToSupabase(updatedData);
+    if (success) {
+      setIsSupabaseSynced(true);
+      showToast('⚡ บันทึกและซิงค์ขึ้น Supabase เรียบร้อย! ผู้ชมทุกคนจะเห็นข้อมูลใหม่ทันที', 'success');
+    } else {
+      showToast('✨ บันทึกในเบราว์เซอร์สำเร็จ (พร้อมอัปโหลดขึ้น Supabase เมื่อรัน SQL แล้ว)', 'info');
     }
   };
 
@@ -131,6 +126,7 @@ export function StudioProvider({ children }) {
   const resetToDefault = () => {
     setData(defaultStudioData);
     localStorage.removeItem('project_unleash_studio_data');
+    saveStudioContentToSupabase(defaultStudioData);
     showToast('🔄 รีเซ็ตข้อมูลกลับเป็นค่าเริ่มต้นแล้ว', 'info');
   };
 
@@ -166,9 +162,12 @@ export function StudioProvider({ children }) {
         isAdminOpen,
         setIsAdminOpen,
         isAdminLoggedIn,
-        adminUser,
         loginAdmin,
         logoutAdmin,
+        analytics,
+        loadAnalytics,
+        currentVisitor,
+        isSupabaseSynced,
         toastMessage,
         showToast,
       }}

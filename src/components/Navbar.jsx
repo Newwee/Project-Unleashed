@@ -69,7 +69,7 @@ export default function Navbar() {
               ) : (
                 <Lock className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform duration-300" />
               )}
-              <span>{isAdminLoggedIn ? 'หลังบ้าน (CMS)' : 'เข้าสู่ระบบ Admin'}</span>
+              <span>หลังบ้าน (Admin)</span>
             </button>
 
             {/* Roblox Group Button */}

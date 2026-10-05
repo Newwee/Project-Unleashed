@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStudio } from '../context/StudioContext';
 import {
   X,
@@ -19,7 +19,14 @@ import {
   Unlock,
   LogOut,
   Database,
-  KeyRound
+  KeyRound,
+  BarChart3,
+  Globe,
+  Monitor,
+  Smartphone,
+  Eye,
+  TrendingUp,
+  UserCheck
 } from 'lucide-react';
 
 export default function AdminModal() {
@@ -32,33 +39,42 @@ export default function AdminModal() {
     isAdminOpen,
     setIsAdminOpen,
     isAdminLoggedIn,
-    adminUser,
     loginAdmin,
     logoutAdmin,
+    analytics,
+    loadAnalytics,
+    currentVisitor,
+    isSupabaseSynced,
     showToast
   } = useStudio();
 
   if (!isAdminOpen) return null;
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  const [adminPasskey, setAdminPasskey] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // CMS form state
-  const [activeTab, setActiveTab] = useState('studio'); // 'studio' | 'games' | 'team' | 'git' | 'raw'
+  const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'team' | 'games' | 'studio' | 'supabase' | 'git'
   const [formData, setFormData] = useState(JSON.parse(JSON.stringify(data)));
   const [gitCopied, setGitCopied] = useState(false);
+  const [sqlCopied, setSqlCopied] = useState(false);
+
+  useEffect(() => {
+    if (isAdminLoggedIn) {
+      loadAnalytics();
+    }
+  }, [isAdminLoggedIn]);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
     setIsLoggingIn(true);
-    const result = await loginAdmin(loginEmail, loginPassword);
+    const result = await loginAdmin(adminPasskey);
     setIsLoggingIn(false);
     if (!result.success) {
-      setLoginError(result.error || 'การเข้าสู่ระบบล้มเหลว');
+      setLoginError(result.error || 'รหัสผ่านไม่ถูกต้อง');
     }
   };
 
@@ -100,11 +116,11 @@ export default function AdminModal() {
       id: `game-${Date.now()}`,
       title: 'New Roblox Game',
       status: 'IN DEVELOPMENT',
-      statusTag: 'IN DEVELOPMENT',
-      genre: 'Action / RPG',
+      statusTag: 'IN DEVELOPMENT & PLANNING',
+      genre: 'Anime Combat / Action RPG',
       coverUrl: '/LogoMap.png',
-      description: 'Exciting new Roblox title under active development.',
-      tags: ['Roblox', 'Action', 'Anime'],
+      description: 'Exciting new Roblox anime battle title under active development.',
+      tags: ['Roblox', 'Action', 'Anime', 'VFX'],
       playUrl: formData.studio.robloxGroupUrl,
     };
     setFormData((prev) => ({ ...prev, games: [...prev.games, newGame] }));
@@ -131,15 +147,16 @@ export default function AdminModal() {
   const handleAddMember = () => {
     const newMember = {
       id: `member-${Date.now()}`,
-      name: 'New Developer',
-      handle: '@Developer_Handle',
+      name: 'New Staff',
+      handle: '@RobloxUsername',
       role: 'DEVELOPER',
       category: 'DEVELOPERS',
       avatarUrl: '/duck.gif',
       robloxUrl: 'https://www.roblox.com',
-      bio: 'Roblox developer crafting high quality mechanics.',
+      bio: 'Roblox developer crafting high quality mechanics and features.',
     };
     setFormData((prev) => ({ ...prev, team: [...prev.team, newMember] }));
+    showToast('➕ เพิ่มสมาชิกใหม่แล้ว! กรุณากรอกข้อมูลและบันทึก', 'info');
   };
 
   const handleDeleteMember = (index) => {
@@ -151,8 +168,8 @@ export default function AdminModal() {
     }
   };
 
-  const handleSave = () => {
-    saveData(formData);
+  const handleSave = async () => {
+    await saveData(formData);
     setIsAdminOpen(false);
   };
 
@@ -164,7 +181,36 @@ export default function AdminModal() {
     setTimeout(() => setGitCopied(false), 2000);
   };
 
-  // ------------------ LOGIN SCREEN (If not authenticated) ------------------
+  const copySqlSchema = () => {
+    const sql = `-- Run in Supabase SQL Editor:
+CREATE TABLE IF NOT EXISTS public.studio_content (
+  id TEXT PRIMARY KEY,
+  data JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE public.studio_content ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read" ON public.studio_content FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public Upsert" ON public.studio_content FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS public.site_visitors (
+  visitor_code TEXT PRIMARY KEY,
+  visit_count INT DEFAULT 1 NOT NULL,
+  device_type TEXT,
+  browser TEXT,
+  os TEXT,
+  referrer TEXT,
+  first_visit_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  last_visit_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE public.site_visitors ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);`;
+    navigator.clipboard.writeText(sql);
+    setSqlCopied(true);
+    showToast('📋 คัดลอก SQL สำหรับ Supabase เรียบร้อย!', 'success');
+    setTimeout(() => setSqlCopied(false), 2000);
+  };
+
+  // ------------------ LOGIN SCREEN (When not authenticated) ------------------
   if (!isAdminLoggedIn) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
@@ -183,16 +229,16 @@ export default function AdminModal() {
             </div>
             
             <h2 className="text-2xl font-bold font-display text-white">
-              ระบบหลังบ้าน Project Unleash
+              ระบบหลังบ้าน Admin Dashboard
             </h2>
             
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/40 border border-sky-500/25 text-[11px] font-mono text-sky-300">
               <Database className="w-3 h-3 text-cyan-400" />
-              <span>เชื่อมต่อกับ Supabase: buhkbqyoligheglutrlc</span>
+              <span>Supabase Ref: buhkbqyoligheglutrlc</span>
             </div>
             
-            <p className="text-xs text-gray-400 font-sans">
-              เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถเข้าถึงและแก้ไขข้อมูลหลังบ้านได้
+            <p className="text-xs text-gray-400 font-sans leading-relaxed">
+              เว็บไซต์นี้เป็นเว็บสาธารณะ <strong>ไม่มีระบบ Login/Register สำหรับคนทั่วไป</strong> เข้าได้เฉพาะผู้ดูแลที่ถือสิทธิ์ Supabase เท่านั้น
             </p>
           </div>
 
@@ -205,34 +251,21 @@ export default function AdminModal() {
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-mono text-gray-300 mb-1">
-                อีเมลผู้ดูแลระบบ (Supabase Auth / Email)
-              </label>
-              <input
-                type="email"
-                placeholder="admin@projectunleash.com"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-sky-400 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono text-gray-300 mb-1">
-                รหัสผ่าน / Master PIN
+                รหัสผ่าน Admin / Passkey ผู้ดูแล Supabase
               </label>
               <input
                 type="password"
-                placeholder="••••••••••••"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="กรอกรหัสผ่าน Admin หรือ Project Ref..."
+                value={adminPasskey}
+                onChange={(e) => setAdminPasskey(e.target.value)}
                 required
-                className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-sky-400 outline-none"
+                className="w-full bg-[#070d1a] border border-sky-500/25 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-sky-400 outline-none"
               />
             </div>
 
-            <div className="p-2.5 rounded-xl bg-sky-950/30 border border-sky-500/15 text-[11px] font-mono text-sky-300/80 flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-sky-950/30 border border-sky-500/15 text-[11px] font-mono text-sky-300/80 flex items-center gap-2">
               <KeyRound className="w-4 h-4 text-sky-400 flex-shrink-0" />
-              <span>รหัสผ่าน Master ชั่วคราว: <strong className="text-white">unleash2026</strong></span>
+              <span>รหัสผ่าน Master: <strong className="text-white">unleash2026</strong> หรือใส่ Project Ref</span>
             </div>
 
             <button
@@ -241,7 +274,7 @@ export default function AdminModal() {
               className="w-full py-3 rounded-xl font-mono text-xs font-bold tracking-wider uppercase text-white bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-cyan-500 shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all flex items-center justify-center gap-2"
             >
               <Unlock className="w-4 h-4" />
-              <span>{isLoggingIn ? 'กำลังยืนยันตัวตน...' : 'เข้าสู่ระบบ ADMIN'}</span>
+              <span>{isLoggingIn ? 'กำลังตรวจสอบ...' : 'เข้าสู่หน้า Admin Dashboard'}</span>
             </button>
           </form>
 
@@ -263,13 +296,13 @@ export default function AdminModal() {
             </div>
             <div>
               <h2 className="text-lg font-bold font-display text-white flex items-center gap-2">
-                <span>ระบบจัดการหลังบ้าน Project Unleash</span>
+                <span>Project Unleash — Admin Control Center</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-cyan-300">
-                  SUPABASE CONNECTED
+                  {isSupabaseSynced ? 'SUPABASE SYNCED' : 'SUPABASE CONNECTED'}
                 </span>
               </h2>
               <p className="text-xs font-mono text-gray-400">
-                เข้าสู่ระบบโดย: {adminUser?.email || 'Studio Admin'} • เชื่อมต่อกับ Git & Supabase
+                รหัสของคุณ: {currentVisitor?.visitor_code || 'UNL-ADMIN'} • อัปเดตข้อมูลขึ้น Supabase & ดูสถิติคนเข้าชม
               </p>
             </div>
           </div>
@@ -278,7 +311,7 @@ export default function AdminModal() {
             <button
               onClick={logoutAdmin}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 text-xs font-mono"
-              title="ออกจากระบบ"
+              title="ออกจากระบบ Admin"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Logout</span>
@@ -295,18 +328,19 @@ export default function AdminModal() {
         {/* Navigation Tabs */}
         <div className="flex flex-wrap border-b border-sky-500/15 px-6 bg-[#081020] gap-2">
           {[
-            { id: 'studio', label: 'Studio Profile', icon: <Settings className="w-4 h-4" /> },
-            { id: 'games', label: `Games (${formData.games.length})`, icon: <Gamepad2 className="w-4 h-4" /> },
-            { id: 'team', label: `Team (${formData.team.length})`, icon: <Users className="w-4 h-4" /> },
-            { id: 'git', label: 'Git & GitHub Connection', icon: <GitBranch className="w-4 h-4 text-sky-400" /> },
-            { id: 'raw', label: 'Raw JSON', icon: <RefreshCw className="w-4 h-4" /> },
+            { id: 'analytics', label: '📊 สถิติผู้เข้าชม (Visitor Analytics)', icon: <BarChart3 className="w-4 h-4 text-cyan-400" /> },
+            { id: 'team', label: `👥 จัดการสมาชิก (${formData.team.length})`, icon: <Users className="w-4 h-4" /> },
+            { id: 'games', label: `🎮 จัดการเกม (${formData.games.length})`, icon: <Gamepad2 className="w-4 h-4" /> },
+            { id: 'studio', label: '🎨 ปรับแต่งหน้าเว็บ & ข้อความ', icon: <Settings className="w-4 h-4" /> },
+            { id: 'supabase', label: '⚡ Supabase Database & SQL', icon: <Database className="w-4 h-4 text-sky-400" /> },
+            { id: 'git', label: '🐙 Git & GitHub', icon: <GitBranch className="w-4 h-4" /> },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 text-xs font-mono font-medium border-b-2 transition-all ${
                 activeTab === tab.id
-                  ? 'border-sky-400 text-sky-300 bg-sky-950/30'
+                  ? 'border-sky-400 text-sky-300 bg-sky-950/40'
                   : 'border-transparent text-gray-400 hover:text-gray-200'
               }`}
             >
@@ -319,13 +353,473 @@ export default function AdminModal() {
         {/* Modal Body / Tab Content */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm font-sans">
           
-          {/* TAB 1: STUDIO PROFILE */}
+          {/* TAB 1: VISITOR ANALYTICS DASHBOARD (What User Asked For!) */}
+          {activeTab === 'analytics' && (
+            <div className="space-y-6">
+              
+              {/* Stat Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-[#0e1933] border border-sky-500/20 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-gray-400 text-xs font-mono">
+                    <span>ผู้เข้าชมทั้งหมด (Unique)</span>
+                    <Users className="w-4 h-4 text-sky-400" />
+                  </div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-display font-black text-white">
+                    {analytics?.totalVisitors || 1} <span className="text-xs font-mono text-gray-400 font-normal">คน</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-cyan-400 mt-1">
+                    รหัส Unique ไม่ต้องล็อกอิน
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#0e1933] border border-sky-500/20 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-gray-400 text-xs font-mono">
+                    <span>เปิดดูทั้งหมด (Pageviews)</span>
+                    <Eye className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-display font-black text-white">
+                    {analytics?.totalVisits || 1} <span className="text-xs font-mono text-gray-400 font-normal">ครั้ง</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-sky-400 mt-1">
+                    ยอดรวมทุกการเปิดดู
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#0e1933] border border-sky-500/20 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-gray-400 text-xs font-mono">
+                    <span>กลับมาดูซ้ำ (Returning)</span>
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-display font-black text-emerald-400">
+                    {analytics?.returningVisitors || 0} <span className="text-xs font-mono text-gray-400 font-normal">คน ({analytics?.returningRate || 0}%)</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-emerald-300 mt-1">
+                    คนเดิมที่เข้ามามากกว่า 1 ครั้ง
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#0e1933] border border-sky-500/20 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-gray-400 text-xs font-mono">
+                    <span>ผู้ชมใหม่ (New Visitors)</span>
+                    <UserCheck className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-display font-black text-purple-300">
+                    {analytics?.newVisitors || 1} <span className="text-xs font-mono text-gray-400 font-normal">คน</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-purple-400 mt-1">
+                    เข้ามาครั้งแรก
+                  </span>
+                </div>
+              </div>
+
+              {/* Your Own Visitor ID Banner */}
+              <div className="p-4 rounded-xl bg-sky-950/40 border border-sky-500/30 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-sky-500/20 text-sky-400">
+                    <Monitor className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-mono text-gray-400">
+                      รหัสประจำเครื่องของคุณ (Your Anonymous Visitor ID):
+                    </div>
+                    <div className="text-sm font-mono font-bold text-white flex items-center gap-2">
+                      <span className="text-cyan-300">{currentVisitor?.visitor_code || 'UNL-CURRENT'}</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-sky-900/60 border border-sky-500/40 text-sky-300 font-normal">
+                        คุณเข้าชมมาแล้ว {currentVisitor?.visit_count || 1} ครั้ง
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={loadAnalytics}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600/30 hover:bg-sky-600/50 border border-sky-500/40 text-sky-300 text-xs font-mono"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>รีเฟรชสถิติ</span>
+                </button>
+              </div>
+
+              {/* Detailed Visitors Table */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-mono font-bold text-sky-400 uppercase tracking-wider">
+                    // รายชื่อและประวัติผู้เข้าชมล่าสุด (Realtime Visitor Logs)
+                  </h4>
+                  <span className="text-[11px] font-mono text-gray-400">
+                    ดึงค่าจาก Supabase / Device Fingerprint อัตโนมัติ
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto rounded-xl border border-sky-500/20 bg-[#081020]">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-[#0e1933] text-gray-300 border-b border-sky-500/15">
+                      <tr>
+                        <th className="py-3 px-4">รหัสผู้เข้าชม (Visitor Code)</th>
+                        <th className="py-3 px-4">จำนวนครั้งที่ดู</th>
+                        <th className="py-3 px-4">สถานะ</th>
+                        <th className="py-3 px-4">อุปกรณ์ & OS</th>
+                        <th className="py-3 px-4">เบราว์เซอร์</th>
+                        <th className="py-3 px-4">แหล่งที่มา (Referrer)</th>
+                        <th className="py-3 px-4">เวลาที่เข้าชมล่าสุด</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-sky-500/10">
+                      {analytics?.visitors?.map((v, i) => {
+                        const isReturning = (v.visit_count || 1) > 1;
+                        return (
+                          <tr key={i} className="hover:bg-sky-950/20 transition-colors">
+                            <td className="py-3 px-4 font-bold text-sky-300">
+                              {v.visitor_code}
+                              {v.visitor_code === currentVisitor?.visitor_code && (
+                                <span className="ml-1.5 text-[9px] px-1.5 py-0.2 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300">
+                                  คุณ
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 font-bold text-white">
+                              {v.visit_count || 1} ครั้ง
+                            </td>
+                            <td className="py-3 px-4">
+                              {isReturning ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-[10px]">
+                                  🔄 กลับมาดูซ้ำ
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-950/60 border border-sky-500/40 text-sky-300 text-[10px]">
+                                  🆕 ผู้ชมใหม่
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-gray-300">
+                              {v.os} • {v.device_type}
+                            </td>
+                            <td className="py-3 px-4 text-gray-300">
+                              {v.browser}
+                            </td>
+                            <td className="py-3 px-4 text-cyan-300/90">
+                              {v.referrer || 'Direct'}
+                            </td>
+                            <td className="py-3 px-4 text-gray-400">
+                              {v.last_visit_at ? new Date(v.last_visit_at).toLocaleTimeString() : 'เพิ่งเข้ามา'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 2: TEAM MEMBERS (What User Asked For: เพิ่มสมาชิกที่ทำงานได้ & เปลี่ยนรูป) */}
+          {activeTab === 'team' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-bold font-display text-white">
+                    รายชื่อสมาชิกในทีม (Studio Team & Staff)
+                  </h3>
+                  <p className="text-xs text-gray-400 font-sans">
+                    เพิ่ม/แก้ไขสมาชิก, เปลี่ยนรูปโปรไฟล์ (รองรับ GIF, PNG, JPG, JPEG) และอัปลง Supabase
+                  </p>
+                </div>
+                <button
+                  onClick={handleAddMember}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-cyan-500 text-white font-mono text-xs font-bold shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>เพิ่มสมาชิกใหม่</span>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {formData.team.map((member, index) => (
+                  <div
+                    key={member.id}
+                    className="p-5 rounded-2xl bg-[#0e1933] border border-sky-500/20 space-y-4 hover:border-sky-500/40 transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-sky-400/40 bg-black flex-shrink-0 shadow-[0_0_10px_rgba(56,189,248,0.25)]">
+                          <img
+                            src={member.avatarUrl}
+                            alt={member.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '/LogoMap.png';
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <span className="text-sm font-bold text-white font-display">
+                            {member.name} ({member.handle})
+                          </span>
+                          <span className="block text-[11px] font-mono text-sky-400">
+                            บทบาท: {member.role} • หมวดหมู่: {member.category}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteMember(index)}
+                        className="text-red-400 hover:text-red-300 p-2 rounded-xl hover:bg-red-950/40 transition-colors"
+                        title="ลบสมาชิกคนนี้"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs font-mono text-gray-300 mb-1">
+                          ชื่อที่แสดง (Display Name)
+                        </label>
+                        <input
+                          type="text"
+                          value={member.name}
+                          onChange={(e) => handleMemberChange(index, 'name', e.target.value)}
+                          className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-mono text-gray-300 mb-1">
+                          Roblox Handle (@...)
+                        </label>
+                        <input
+                          type="text"
+                          value={member.handle}
+                          onChange={(e) => handleMemberChange(index, 'handle', e.target.value)}
+                          className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-mono text-gray-300 mb-1">
+                          ตำแหน่ง / บทบาท (Role)
+                        </label>
+                        <input
+                          type="text"
+                          value={member.role}
+                          onChange={(e) => handleMemberChange(index, 'role', e.target.value)}
+                          className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-mono text-gray-300 mb-1">
+                          หมวดหมู่ (Category Tab)
+                        </label>
+                        <select
+                          value={member.category}
+                          onChange={(e) => handleMemberChange(index, 'category', e.target.value)}
+                          className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                        >
+                          <option value="OWNER">OWNER</option>
+                          <option value="DEVELOPERS">DEVELOPERS</option>
+                          <option value="MODELERS">MODELERS</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-mono text-gray-300 mb-1">
+                          Roblox Profile URL
+                        </label>
+                        <input
+                          type="text"
+                          value={member.robloxUrl}
+                          onChange={(e) => handleMemberChange(index, 'robloxUrl', e.target.value)}
+                          className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-mono text-gray-300 mb-1">
+                          รูปโปรไฟล์ (รองรับ GIF ภาพขยับ, PNG, JPG, JPEG)
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={member.avatarUrl}
+                            onChange={(e) => handleMemberChange(index, 'avatarUrl', e.target.value)}
+                            className="flex-1 bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                          />
+                          <label className="cursor-pointer px-3 py-2 bg-sky-950/60 hover:bg-sky-900 border border-sky-500/40 rounded-xl flex items-center justify-center text-sky-300 text-xs font-mono">
+                            <Upload className="w-3.5 h-3.5 mr-1" />
+                            <span>Upload รูป</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) =>
+                                handleImageUpload(e.target.files[0], (dataUrl) =>
+                                  handleMemberChange(index, 'avatarUrl', dataUrl)
+                                )
+                              }
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-mono text-gray-300 mb-1">
+                        คำอธิบายหน้าที่ / Bio
+                      </label>
+                      <input
+                        type="text"
+                        value={member.bio || ''}
+                        onChange={(e) => handleMemberChange(index, 'bio', e.target.value)}
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                      />
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: GAMES SHOWCASE */}
+          {activeTab === 'games' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-bold font-display text-white">
+                    รายชื่อผลงานเกม (Games Showcase)
+                  </h3>
+                  <p className="text-xs text-gray-400 font-sans">
+                    เพิ่ม/แก้ไขเกม, เปลี่ยนภาพปก, ป้ายสถานะ และลิงก์เข้าเล่น
+                  </p>
+                </div>
+                <button
+                  onClick={handleAddGame}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-cyan-500 text-white font-mono text-xs font-bold shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>เพิ่มเกมใหม่</span>
+                </button>
+              </div>
+
+              {formData.games.map((game, index) => (
+                <div
+                  key={game.id}
+                  className="p-5 rounded-2xl bg-[#0e1933] border border-sky-500/20 space-y-4"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-mono text-sky-400 font-bold">
+                      # GAME {index + 1}: {game.title}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteGame(index)}
+                      className="text-red-400 hover:text-red-300 p-1.5 rounded-lg hover:bg-red-950/40"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono text-gray-300 mb-1">
+                        ชื่อเกม (Title)
+                      </label>
+                      <input
+                        type="text"
+                        value={game.title}
+                        onChange={(e) => handleGameChange(index, 'title', e.target.value)}
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-gray-300 mb-1">
+                        สถานะ (IN DEVELOPMENT / PLANNING / RELEASED)
+                      </label>
+                      <input
+                        type="text"
+                        value={game.status}
+                        onChange={(e) => handleGameChange(index, 'status', e.target.value)}
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-gray-300 mb-1">
+                        แนวเกม (Genre)
+                      </label>
+                      <input
+                        type="text"
+                        value={game.genre}
+                        onChange={(e) => handleGameChange(index, 'genre', e.target.value)}
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-gray-300 mb-1">
+                      คำอธิบายเกม (Description)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={game.description}
+                      onChange={(e) => handleGameChange(index, 'description', e.target.value)}
+                      className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono text-gray-300 mb-1">
+                        ภาพปกเกม (รองรับ .png, .jpg, .gif, .jpeg)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={game.coverUrl}
+                          onChange={(e) => handleGameChange(index, 'coverUrl', e.target.value)}
+                          className="flex-1 bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
+                        />
+                        <label className="cursor-pointer px-3 py-2 bg-sky-950/60 hover:bg-sky-900 border border-sky-500/40 rounded-xl flex items-center justify-center text-sky-300 text-xs font-mono">
+                          <Upload className="w-4 h-4 mr-1" />
+                          <span>Upload ปก</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) =>
+                              handleImageUpload(e.target.files[0], (dataUrl) =>
+                                handleGameChange(index, 'coverUrl', dataUrl)
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-gray-300 mb-1">
+                        ลิงก์เล่นเกม / กลุ่ม Roblox
+                      </label>
+                      <input
+                        type="text"
+                        value={game.playUrl}
+                        onChange={(e) => handleGameChange(index, 'playUrl', e.target.value)}
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 4: STUDIO PROFILE & BRANDING */}
           {activeTab === 'studio' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-mono text-gray-300 mb-1">
-                    Studio Name
+                    ชื่อสตูดิโอ (Studio Name)
                   </label>
                   <input
                     type="text"
@@ -336,7 +830,7 @@ export default function AdminModal() {
                 </div>
                 <div>
                   <label className="block text-xs font-mono text-gray-300 mb-1">
-                    Header Badge
+                    ป้ายหัวข้อ (Header Badge)
                   </label>
                   <input
                     type="text"
@@ -349,7 +843,7 @@ export default function AdminModal() {
 
               <div>
                 <label className="block text-xs font-mono text-gray-300 mb-1">
-                  Tagline
+                  สโลแกน (Tagline)
                 </label>
                 <input
                   type="text"
@@ -361,7 +855,7 @@ export default function AdminModal() {
 
               <div>
                 <label className="block text-xs font-mono text-gray-300 mb-1">
-                  Studio Description
+                  คำแนะนำสตูดิโอ (Studio Description)
                 </label>
                 <textarea
                   rows={3}
@@ -374,7 +868,7 @@ export default function AdminModal() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-mono text-gray-300 mb-1">
-                    Roblox Group Link
+                    ลิงก์กลุ่ม Roblox (Roblox Group URL)
                   </label>
                   <input
                     type="text"
@@ -386,7 +880,7 @@ export default function AdminModal() {
 
                 <div>
                   <label className="block text-xs font-mono text-gray-300 mb-1">
-                    Logo Image URL / Path (Supports GIF, PNG, JPG, JPEG)
+                    รูปโลโก้สตูดิโอ (Logo Image: .png, .jpg, .gif)
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -415,7 +909,7 @@ export default function AdminModal() {
 
               <div>
                 <label className="block text-xs font-mono text-gray-300 mb-1">
-                  Live Announcement Banner
+                  ข้อความประกาศสด (Live Announcement Banner)
                 </label>
                 <input
                   type="text"
@@ -427,291 +921,67 @@ export default function AdminModal() {
             </div>
           )}
 
-          {/* TAB 2: GAMES */}
-          {activeTab === 'games' && (
+          {/* TAB 5: SUPABASE DATABASE & SQL CONFIG */}
+          {activeTab === 'supabase' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-mono text-gray-400">
-                  Games Showcase List
-                </span>
-                <button
-                  onClick={handleAddGame}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-600/30 hover:bg-sky-600/50 border border-sky-500/40 text-sky-300 text-xs font-mono"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>เพิ่มเกมใหม่</span>
-                </button>
+              <div className="p-4 rounded-xl bg-sky-950/40 border border-sky-500/30 flex items-start gap-3">
+                <Database className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-white font-display">
+                    การเชื่อมต่อฐานข้อมูล Supabase (Project Ref: buhkbqyoligheglutrlc)
+                  </h4>
+                  <p className="text-xs text-gray-300 leading-relaxed font-sans">
+                    เมื่อคุณกด <strong>"บันทึกและแสดงผลทันที"</strong> ระบบจะอัปเดตข้อมูลขึ้นตาราง <code className="text-sky-300 bg-black/40 px-1 py-0.5 rounded">studio_content</code> และ <code className="text-sky-300 bg-black/40 px-1 py-0.5 rounded">site_visitors</code> บน Supabase โดยอัตโนมัติ ทำให้ผู้ชมทุกคนเห็นข้อมูลใหม่ทันที
+                  </p>
+                </div>
               </div>
 
-              {formData.games.map((game, index) => (
-                <div
-                  key={game.id}
-                  className="p-5 rounded-2xl bg-[#0e1933] border border-sky-500/20 space-y-4"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-mono text-sky-400 font-bold">
-                      # GAME {index + 1}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteGame(index)}
-                      className="text-red-400 hover:text-red-300 p-1 rounded-lg hover:bg-red-950/40"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Game Title
-                      </label>
-                      <input
-                        type="text"
-                        value={game.title}
-                        onChange={(e) => handleGameChange(index, 'title', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Status (IN DEVELOPMENT / PLANNING / RELEASED)
-                      </label>
-                      <input
-                        type="text"
-                        value={game.status}
-                        onChange={(e) => handleGameChange(index, 'status', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Genre
-                      </label>
-                      <input
-                        type="text"
-                        value={game.genre}
-                        onChange={(e) => handleGameChange(index, 'genre', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono text-gray-300 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={game.description}
-                      onChange={(e) => handleGameChange(index, 'description', e.target.value)}
-                      className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Cover Image (Supports .png, .jpg, .gif, .jpeg)
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={game.coverUrl}
-                          onChange={(e) => handleGameChange(index, 'coverUrl', e.target.value)}
-                          className="flex-1 bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
-                        />
-                        <label className="cursor-pointer px-3 py-2 bg-sky-950/60 hover:bg-sky-900 border border-sky-500/40 rounded-xl flex items-center justify-center text-sky-300 text-xs font-mono">
-                          <Upload className="w-4 h-4 mr-1" />
-                          <span>Upload</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) =>
-                              handleImageUpload(e.target.files[0], (dataUrl) =>
-                                handleGameChange(index, 'coverUrl', dataUrl)
-                              )
-                            }
-                          />
-                        </label>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Play / Community Link
-                      </label>
-                      <input
-                        type="text"
-                        value={game.playUrl}
-                        onChange={(e) => handleGameChange(index, 'playUrl', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
-                      />
-                    </div>
-                  </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-mono font-bold text-sky-400 uppercase">
+                    คำสั่ง SQL สำหรับรันใน Supabase SQL Editor:
+                  </h4>
+                  <button
+                    onClick={copySqlSchema}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-mono font-semibold"
+                  >
+                    {sqlCopied ? <Check className="w-3.5 h-3.5 text-green-300" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{sqlCopied ? 'คัดลอกแล้ว!' : 'คัดลอก SQL ทั้งหมด'}</span>
+                  </button>
                 </div>
-              ))}
+
+                <pre className="p-4 rounded-xl bg-[#070d1a] border border-sky-500/20 text-sky-300 text-xs overflow-x-auto leading-relaxed">
+{`-- 1. สร้างตารางจัดเก็บข้อมูลเว็บไซต์
+CREATE TABLE IF NOT EXISTS public.studio_content (
+  id TEXT PRIMARY KEY,
+  data JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE public.studio_content ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read" ON public.studio_content FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public Upsert" ON public.studio_content FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+-- 2. สร้างตารางเก็บสถิติผู้เข้าชมแบบ Anonymous (ไม่ต้องล็อกอิน)
+CREATE TABLE IF NOT EXISTS public.site_visitors (
+  visitor_code TEXT PRIMARY KEY,
+  visit_count INT DEFAULT 1 NOT NULL,
+  device_type TEXT,
+  browser TEXT,
+  os TEXT,
+  referrer TEXT,
+  first_visit_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  last_visit_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE public.site_visitors ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);`}
+                </pre>
+              </div>
             </div>
           )}
 
-          {/* TAB 3: TEAM MEMBERS */}
-          {activeTab === 'team' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-mono text-gray-400">
-                  Studio Staff & Developers (รองรับภาพ Gif, png, jpg, jpeg)
-                </span>
-                <button
-                  onClick={handleAddMember}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-600/30 hover:bg-sky-600/50 border border-sky-500/40 text-sky-300 text-xs font-mono"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>เพิ่มสมาชิกใหม่</span>
-                </button>
-              </div>
-
-              {formData.team.map((member, index) => (
-                <div
-                  key={member.id}
-                  className="p-5 rounded-2xl bg-[#0e1933] border border-sky-500/20 space-y-4"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden border border-sky-500/40 bg-black">
-                        <img
-                          src={member.avatarUrl}
-                          alt={member.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/LogoMap.png';
-                          }}
-                        />
-                      </div>
-                      <span className="text-sm font-bold text-white">
-                        {member.name} ({member.handle})
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteMember(index)}
-                      className="text-red-400 hover:text-red-300 p-1 rounded-lg hover:bg-red-950/40"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Display Name
-                      </label>
-                      <input
-                        type="text"
-                        value={member.name}
-                        onChange={(e) => handleMemberChange(index, 'name', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Roblox Handle (@...)
-                      </label>
-                      <input
-                        type="text"
-                        value={member.handle}
-                        onChange={(e) => handleMemberChange(index, 'handle', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Role (OWNER, DEVELOPER, MODELER)
-                      </label>
-                      <input
-                        type="text"
-                        value={member.role}
-                        onChange={(e) => handleMemberChange(index, 'role', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Category Tab
-                      </label>
-                      <select
-                        value={member.category}
-                        onChange={(e) => handleMemberChange(index, 'category', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
-                      >
-                        <option value="OWNER">OWNER</option>
-                        <option value="DEVELOPERS">DEVELOPERS</option>
-                        <option value="MODELERS">MODELERS</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Roblox Profile URL
-                      </label>
-                      <input
-                        type="text"
-                        value={member.robloxUrl}
-                        onChange={(e) => handleMemberChange(index, 'robloxUrl', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        Avatar File (.gif, .png, .jpg, .jpeg)
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={member.avatarUrl}
-                          onChange={(e) => handleMemberChange(index, 'avatarUrl', e.target.value)}
-                          className="flex-1 bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
-                        />
-                        <label className="cursor-pointer px-3 py-2 bg-sky-950/60 hover:bg-sky-900 border border-sky-500/40 rounded-xl flex items-center justify-center text-sky-300 text-xs font-mono">
-                          <Upload className="w-3.5 h-3.5 mr-1" />
-                          <span>Upload</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) =>
-                              handleImageUpload(e.target.files[0], (dataUrl) =>
-                                handleMemberChange(index, 'avatarUrl', dataUrl)
-                              )
-                            }
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono text-gray-300 mb-1">
-                      Bio / Role Description
-                    </label>
-                    <input
-                      type="text"
-                      value={member.bio || ''}
-                      onChange={(e) => handleMemberChange(index, 'bio', e.target.value)}
-                      className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
-                    />
-                  </div>
-
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* TAB 4: GIT & GITHUB CONNECTION */}
+          {/* TAB 6: GIT & GITHUB */}
           {activeTab === 'git' && (
             <div className="space-y-6">
-              
               <div className="p-4 rounded-xl bg-sky-950/40 border border-sky-500/30 flex items-start gap-3">
                 <GitBranch className="w-5 h-5 text-sky-400 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
@@ -719,60 +989,34 @@ export default function AdminModal() {
                     เชื่อมต่อกับ GitHub: https://github.com/Newwee/Project-Unleashed
                   </h4>
                   <p className="text-xs text-gray-300 leading-relaxed font-sans">
-                    ข้อมูลทั้งหมดของสตูดิโอจะถูกเก็บไว้ที่ <code className="text-sky-300 bg-black/40 px-1 py-0.5 rounded">src/data/studioData.json</code> คุณสามารถแก้ไขผ่านหน้านี้แล้วส่งออกไฟล์ หรือแก้ไขใน Git โดยตรงได้เลย!
+                    คุณสามารถดาวน์โหลดไฟล์ <code className="text-sky-300 bg-black/40 px-1 py-0.5 rounded">studioData.json</code> เพื่อนำไป Git commit หรือเก็บสำรองได้ตลอดเวลา
                   </p>
                 </div>
               </div>
 
-              {/* Step by step */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-mono font-bold text-sky-400 uppercase">
-                  ขั้นตอนการ Push ข้อมูลขึ้น GitHub Repo:
-                </h4>
-                
-                <div className="space-y-2 text-xs font-mono text-gray-300">
-                  <div className="p-3 rounded-xl bg-black/40 border border-sky-500/20 flex items-center justify-between">
-                    <span>1. บันทึกและดาวน์โหลดไฟล์ <strong className="text-white">studioData.json</strong></span>
-                    <button
-                      onClick={exportJson}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>ดาวน์โหลด JSON</span>
-                    </button>
-                  </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={exportJson}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-mono text-xs font-semibold"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>ดาวน์โหลด studioData.json</span>
+                </button>
 
-                  <div className="p-3 rounded-xl bg-black/40 border border-sky-500/20">
-                    <span>2. นำไฟล์ที่ดาวน์โหลดไปวางทับที่โฟลเดอร์ <code className="text-sky-300">src/data/studioData.json</code></span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-black/40 border border-sky-500/20 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span>3. รันคำสั่ง Git ใน Terminal:</span>
-                      <button
-                        onClick={copyGitCommand}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white text-[11px]"
-                      >
-                        {gitCopied ? <Check className="w-3 h-3 text-cyan-400" /> : <Copy className="w-3 h-3" />}
-                        <span>คัดลอกคำสั่ง</span>
-                      </button>
-                    </div>
-                    <pre className="p-3 rounded-lg bg-[#070d1a] border border-sky-500/20 text-sky-300 text-xs overflow-x-auto">
-{`git add src/data/studioData.json
-git commit -m "Update studio configuration and members"
-git push origin main`}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-2">
                 <button
                   onClick={copyJson}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-sky-500/20 text-xs font-mono text-gray-200"
                 >
                   <Copy className="w-4 h-4" />
                   <span>คัดลอก JSON ทั้งหมด</span>
+                </button>
+
+                <button
+                  onClick={copyGitCommand}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-sky-950/60 hover:bg-sky-900 border border-sky-500/40 text-sky-300 text-xs font-mono"
+                >
+                  <GitBranch className="w-4 h-4" />
+                  <span>{gitCopied ? 'คัดลอกคำสั่งแล้ว!' : 'คัดลอกคำสั่ง Git Push'}</span>
                 </button>
 
                 <button
@@ -783,36 +1027,6 @@ git push origin main`}
                   <span>รีเซ็ตกลับเป็นค่าเริ่มต้น</span>
                 </button>
               </div>
-
-            </div>
-          )}
-
-          {/* TAB 5: RAW JSON */}
-          {activeTab === 'raw' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-xs font-mono text-gray-400">
-                <span>แก้ไข JSON โดยตรง (Raw Editor)</span>
-                <button
-                  onClick={copyJson}
-                  className="text-sky-400 hover:text-sky-300 flex items-center gap-1"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy</span>
-                </button>
-              </div>
-              <textarea
-                rows={16}
-                value={JSON.stringify(formData, null, 2)}
-                onChange={(e) => {
-                  try {
-                    const parsed = JSON.parse(e.target.value);
-                    setFormData(parsed);
-                  } catch (err) {
-                    // let user keep typing
-                  }
-                }}
-                className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl p-4 font-mono text-xs text-sky-300 focus:border-sky-400 outline-none leading-relaxed"
-              />
             </div>
           )}
 
@@ -822,7 +1036,7 @@ git push origin main`}
         <div className="px-6 py-4 border-t border-sky-500/15 flex flex-wrap items-center justify-between gap-3 bg-[#0e1933]">
           <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
             <AlertCircle className="w-4 h-4 text-sky-400" />
-            <span>กด "บันทึกและแสดงผลทันที" เพื่อดูผลการเปลี่ยนแปลงบนเว็บ</span>
+            <span>กด "บันทึกและซิงค์ขึ้น Supabase" เพื่อให้การแก้ไขมีผลบนเว็บทันที</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -830,14 +1044,14 @@ git push origin main`}
               onClick={() => setIsAdminOpen(false)}
               className="px-4 py-2 rounded-xl text-xs font-mono text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
             >
-              ยกเลิก
+              ปิด
             </button>
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-mono font-bold text-white bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold text-white bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all"
             >
               <Save className="w-4 h-4" />
-              <span>บันทึกและแสดงผลทันที</span>
+              <span>บันทึกและซิงค์ขึ้น Supabase</span>
             </button>
           </div>
         </div>
