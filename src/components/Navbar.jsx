@@ -1,11 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStudio } from '../context/StudioContext';
-import { Settings, ExternalLink, Menu, X, Shield, Lock } from 'lucide-react';
+import { ExternalLink, Menu, X } from 'lucide-react';
 import Magnet from './reactbits/Magnet';
 
 export default function Navbar() {
-  const { data, setIsAdminOpen, isAdminLoggedIn } = useStudio();
+  const { data, setIsAdminOpen } = useStudio();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const logoClickCount = useRef(0);
+  const logoTimer = useRef(null);
+
+  // Secret Admin Activation Methods:
+  // 1. Keyboard Shortcut: Ctrl + Shift + A (or Cmd + Shift + A)
+  // 2. URL Hash: #admin or ?admin=true
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setIsAdminOpen(true);
+      }
+    };
+
+    const checkUrlAdmin = () => {
+      if (
+        window.location.hash === '#admin' ||
+        window.location.search.includes('admin=true')
+      ) {
+        setIsAdminOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    checkUrlAdmin();
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [setIsAdminOpen]);
+
+  // 3. Secret Triple-Click on Logo (Clicking logo 3 times within 1 second)
+  const handleLogoSecretClick = (e) => {
+    logoClickCount.current += 1;
+    if (logoTimer.current) clearTimeout(logoTimer.current);
+
+    if (logoClickCount.current >= 3) {
+      e.preventDefault();
+      logoClickCount.current = 0;
+      setIsAdminOpen(true);
+      return;
+    }
+
+    logoTimer.current = setTimeout(() => {
+      logoClickCount.current = 0;
+    }, 1000);
+  };
 
   const navLinks = [
     { label: 'HOME', href: '#home' },
@@ -18,8 +65,12 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* Logo & Brand */}
-          <a href="#home" className="flex items-center gap-3.5 group">
+          {/* Logo & Brand (Secret entry: Triple-click logo to open admin) */}
+          <div
+            onClick={handleLogoSecretClick}
+            className="flex items-center gap-3.5 group cursor-pointer select-none"
+            title={data.studio.name}
+          >
             <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-sky-500/30 bg-[#0c162d] p-1 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 group-hover:border-sky-400/60 shadow-[0_0_15px_rgba(56,189,248,0.25)]">
               <img
                 src={data.studio.logoUrl}
@@ -40,7 +91,7 @@ export default function Navbar() {
                 {data.studio.badge || 'ROBLOX STUDIO'}
               </span>
             </div>
-          </a>
+          </div>
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-8">
@@ -56,23 +107,8 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Right Action Buttons */}
+          {/* Right Action Button (Only Roblox Group is visible to the public) */}
           <div className="hidden md:flex items-center gap-3.5">
-            {/* Backoffice / Admin CMS Button */}
-            <button
-              onClick={() => setIsAdminOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 text-xs font-mono text-sky-300 bg-sky-950/40 hover:bg-sky-900/50 border border-sky-500/30 hover:border-sky-400/60 rounded-xl transition-all duration-300 group shadow-sm"
-              title="จัดการข้อมูลหลังบ้าน / เชื่อมต่อ Supabase & Git"
-            >
-              {isAdminLoggedIn ? (
-                <Settings className="w-3.5 h-3.5 text-sky-400 group-hover:rotate-45 transition-transform duration-300" />
-              ) : (
-                <Lock className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform duration-300" />
-              )}
-              <span>หลังบ้าน (Admin)</span>
-            </button>
-
-            {/* Roblox Group Button */}
             <Magnet padding={40} magnetStrength={0.25}>
               <a
                 href={data.studio.robloxGroupUrl}
@@ -88,13 +124,6 @@ export default function Navbar() {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={() => setIsAdminOpen(true)}
-              className="p-2 text-sky-400 bg-sky-950/40 border border-sky-500/30 rounded-lg"
-              title="หลังบ้าน"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-gray-300 hover:text-white rounded-lg focus:outline-none"

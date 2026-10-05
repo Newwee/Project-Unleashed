@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStudio } from '../context/StudioContext';
 import TiltedCard from './reactbits/TiltedCard';
 import SpotlightCard from './reactbits/SpotlightCard';
-import { ExternalLink, Copy, Check, Shield, Code, Palette } from 'lucide-react';
+import { ExternalLink, Copy, Check, Shield, Code, Palette, Sparkles, Terminal, Layers, Box } from 'lucide-react';
 
 export default function TeamSection() {
   const { data, showToast } = useStudio();
@@ -20,15 +20,31 @@ export default function TeamSection() {
 
   const getRoleBadgeStyle = (role) => {
     const r = (role || '').toUpperCase();
-    if (r.includes('OWNER') || r.includes('FOUNDER')) {
+    if (r.includes('OWNER') || r.includes('VFX')) {
       return {
         bg: 'bg-sky-950/70',
         border: 'border-sky-400/50 text-sky-200',
         glow: 'shadow-[0_0_15px_rgba(56,189,248,0.35)]',
-        icon: <Shield className="w-3.5 h-3.5 text-sky-400" />
+        icon: <Sparkles className="w-3.5 h-3.5 text-sky-400" />
       };
     }
-    if (r.includes('DEV') || r.includes('SCRIPT') || r.includes('PROGRAM')) {
+    if (r.includes('BACK-END') || r.includes('BACKEND')) {
+      return {
+        bg: 'bg-blue-950/70',
+        border: 'border-cyan-400/50 text-cyan-200',
+        glow: 'shadow-[0_0_15px_rgba(6,182,212,0.35)]',
+        icon: <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+      };
+    }
+    if (r.includes('FRONT-END') || r.includes('FRONTEND')) {
+      return {
+        bg: 'bg-blue-950/70',
+        border: 'border-blue-400/50 text-blue-200',
+        glow: 'shadow-[0_0_15px_rgba(96,165,250,0.35)]',
+        icon: <Layers className="w-3.5 h-3.5 text-blue-400" />
+      };
+    }
+    if (r.includes('DEV') || r.includes('SCRIPT')) {
       return {
         bg: 'bg-blue-950/70',
         border: 'border-cyan-400/50 text-cyan-200',
@@ -40,7 +56,7 @@ export default function TeamSection() {
       bg: 'bg-indigo-950/70',
       border: 'border-indigo-400/50 text-indigo-200',
       glow: 'shadow-[0_0_15px_rgba(99,102,241,0.35)]',
-      icon: <Palette className="w-3.5 h-3.5 text-indigo-400" />
+      icon: <Box className="w-3.5 h-3.5 text-indigo-400" />
     };
   };
 

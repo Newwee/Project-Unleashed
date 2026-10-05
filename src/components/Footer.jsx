@@ -1,9 +1,9 @@
 import React from 'react';
 import { useStudio } from '../context/StudioContext';
-import { ExternalLink, Settings, GitBranch } from 'lucide-react';
+import { ExternalLink, Database } from 'lucide-react';
 
 export default function Footer() {
-  const { data, setIsAdminOpen } = useStudio();
+  const { data } = useStudio();
 
   return (
     <footer className="border-t border-sky-500/10 bg-[#050914] relative z-10 pt-16 pb-12">
@@ -31,9 +31,10 @@ export default function Footer() {
             <p className="text-sm text-gray-400 font-sans max-w-sm leading-relaxed">
               {data.studio.tagline || 'Unleash Your Power. Elevating Roblox Anime Gaming.'}
             </p>
+            {/* React & Supabase as requested */}
             <div className="flex items-center gap-2 text-xs font-mono text-sky-400">
-              <GitBranch className="w-3.5 h-3.5" />
-              <span>Git-Connected & Configurable via Studio CMS (Supabase)</span>
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span>React & Supabase</span>
             </div>
           </div>
 
@@ -61,10 +62,10 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Socials & Backoffice */}
+          {/* Socials & Community (Admin button completely hidden from public view) */}
           <div className="md:col-span-3 space-y-3">
             <h4 className="text-xs font-mono font-bold tracking-widest text-gray-200 uppercase">
-              // COMMUNITY & ADMIN
+              // COMMUNITY
             </h4>
             <div className="space-y-2.5">
               <a
@@ -76,15 +77,6 @@ export default function Footer() {
                 <span>JOIN ROBLOX GROUP</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
-              <div>
-                <button
-                  onClick={() => setIsAdminOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-sky-300 bg-sky-950/40 hover:bg-sky-900/60 border border-sky-500/30 transition-all"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>จัดการข้อมูลหลังบ้าน (Admin CMS)</span>
-                </button>
-              </div>
             </div>
           </div>
 
@@ -94,7 +86,7 @@ export default function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-gray-500">
           <p>© 2026 {data.studio.name}. All rights reserved.</p>
           <p className="flex items-center gap-1">
-            Crafted for Roblox Developers & Creators
+            React & Supabase • Built for Roblox Creators
           </p>
         </div>
       </div>

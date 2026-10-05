@@ -10,7 +10,10 @@ export function StudioProvider({ children }) {
     try {
       const saved = localStorage.getItem('project_unleash_studio_data');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.team && parsed.team.some(m => m.role === 'OWNER / VFX')) {
+          return parsed;
+        }
       }
     } catch (e) {}
     return defaultStudioData;

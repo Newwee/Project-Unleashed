@@ -33,41 +33,41 @@
       "id": "norlive",
       "name": "norlive",
       "handle": "@norlive",
-      "role": "OWNER",
+      "role": "OWNER / VFX",
       "category": "OWNER",
       "avatarUrl": "/TamaVFX.jpg",
       "robloxUrl": "https://www.roblox.com/users/483055395/profile",
-      "bio": "Studio Director & VFX Visionary. Leading game concepts and directing the future of Project Unleash."
+      "bio": "Studio Owner & Lead VFX Artist. ดูแลงาน Visual Effects (VFX) อลังการสำหรับเกมและระบบสกิลทั้งหมด"
     },
     {
       "id": "dark-night-new",
       "name": "NEWJAA",
       "handle": "@Dark_NightNew",
-      "role": "DEVELOPER",
+      "role": "BACK-END DEVELOPER",
       "category": "DEVELOPERS",
       "avatarUrl": "/duck.gif",
       "robloxUrl": "https://www.roblox.com/users/1404764448/profile",
-      "bio": "Lead Gameplay & Mechanics Programmer. Architect of fluid combat logic and core systems."
+      "bio": "Lead Back-End & Gameplay Programmer. จัดการระบบหลังบ้าน, ระบบการต่อสู้ Core Mechanics และ Server Architecture"
     },
     {
       "id": "real-aerxz",
       "name": "Alex",
       "handle": "@RealAerxz_OV",
-      "role": "DEVELOPER",
+      "role": "FRONT-END DEVELOPER",
       "category": "DEVELOPERS",
       "avatarUrl": "/AlexProfile.png",
       "robloxUrl": "https://www.roblox.com/users/1525362881/profile",
-      "bio": "Systems Engineer & Gameplay Developer. Fine-tuning server stability and combat physics."
+      "bio": "Front-End & UI/UX Developer. ออกแบบและพัฒนาระบบหน้าบ้าน User Interface (UI), เมนู และความลื่นไหลในการเล่น"
     },
     {
       "id": "dorzzy",
       "name": "Dorzzy",
       "handle": "@dorzzy_xlive2",
-      "role": "MODELER",
+      "role": "3D MODELER / BUILDER",
       "category": "MODELERS",
       "avatarUrl": "/DorzzyProfile.png",
       "robloxUrl": "https://www.roblox.com/users/11540104928/profile",
-      "bio": "3D Environment & Asset Modeler. Crafting the visual atmosphere and weapon designs."
+      "bio": "Environment Artist & 3D Modeler. จัดการ Build Map Game Lobby, สิ่งก่อสร้าง และโครงสร้างแผนที่ทั้งหมด"
     }
   ]
 }
