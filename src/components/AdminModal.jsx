@@ -734,14 +734,17 @@ CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authentic
                     </div>
                     <div>
                       <label className="block text-xs font-mono text-gray-300 mb-1">
-                        สถานะ (IN DEVELOPMENT / PLANNING / RELEASED)
+                        สถานะเกม (Status)
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={game.status}
                         onChange={(e) => handleGameChange(index, 'status', e.target.value)}
-                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
-                      />
+                        className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-400 outline-none"
+                      >
+                        <option value="IN DEVELOPMENT">IN DEVELOPMENT (กำลังพัฒนา - ปุ่มสีเทากดไม่ได้)</option>
+                        <option value="PLANNING">PLANNING (อยู่ในช่วงวางแผน - ปุ่มสีเทากดไม่ได้)</option>
+                        <option value="RELEASED">RELEASED (เปิดให้เล่นแล้ว - ปุ่มสีฟ้า กดเพื่อไปเล่น)</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-mono text-gray-300 mb-1">
@@ -797,11 +800,13 @@ CREATE POLICY "Public Upsert" ON public.site_visitors FOR ALL TO anon, authentic
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
-                        ลิงก์เล่นเกม / กลุ่ม Roblox
+                      <label className="block text-xs font-mono text-gray-300 mb-1 flex items-center justify-between">
+                        <span>ลิงก์เข้าเล่นเกม Roblox (Game URL)</span>
+                        <span className="text-[10px] text-cyan-400 font-mono">*สำหรับปุ่ม "กดเพื่อไปเล่น"</span>
                       </label>
                       <input
                         type="text"
+                        placeholder="https://www.roblox.com/games/..."
                         value={game.playUrl}
                         onChange={(e) => handleGameChange(index, 'playUrl', e.target.value)}
                         className="w-full bg-[#070d1a] border border-sky-500/20 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-400 outline-none"
